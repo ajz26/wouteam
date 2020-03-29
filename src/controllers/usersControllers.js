@@ -140,3 +140,108 @@ exports.updateUser = async (req, res) => {
     });
 
 }
+
+
+exports.updateUserPasswordGenerateToken = async (req, res) => {
+
+    const { email } = req.body;
+
+    if(!email || !validator.isEmail(email)){
+        return res.status(401).json({
+            response: 'error',
+            msg: 'Por favor ingresa un correo válido',
+        });
+    }
+
+
+    User.findOne({ email }).then( user => {
+        if (!user) {
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Uupps, No existe ningun usuario con ese correo',
+            });
+        }
+
+        var secret = process.env.SECRET;
+
+        const payload = {
+            user:user._id
+        };
+
+        jwt.sign(payload, secret,{
+            expiresIn: 3600,
+        },(error,token) => {
+            if (error) throw error;
+
+            res.status(200).json({
+                response: 'success',
+                msg: 'Solicitud de recuperación de contraseña realizada con exito, revisa tu correo electrónico',
+                token
+            });
+
+        });
+        
+
+    }).catch( error => {
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error',
+        });
+
+    });
+
+}
+
+
+exports.PasswordUpdate = async (req, res) => {
+
+    const {token} = req.params;
+
+    const {password} = req.body;
+ 
+    const verifyToken = ( validator.isJWT(token)) ? jwt.verify(token,process.env.SECRET) : false;
+
+    if (!token || !verifyToken){
+
+        return res.status(301).json({
+            response: 'error',
+            msg: 'Token invalido, intenta de nuevo tu solicitud',
+        });
+    }
+
+    if (!password || validator.isEmpty(password)){
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'por favor ingresa una contraseña nueva',
+        });
+    }
+
+    try{
+
+        const ID = verifyToken.user;
+
+        const user = await User.findOne({_id:ID});
+
+        user.password = await user.encryptPassword(password);        
+        
+        await user.save();
+
+        res.status(200).json({
+            response: 'success',
+            msg: 'contraseña actualizada correctamente',
+        });
+    }
+    
+    catch ( error) {
+        console.log('ha ocurrido un error al actualizar la contraseña')
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error',
+        });
+
+    }
+
+}
