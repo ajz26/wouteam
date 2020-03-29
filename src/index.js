@@ -19,6 +19,7 @@ app.use(bodyParser.json());
 app.use('/api/v1/user/', require('./routes/v1/users.routes.js'));
 app.use('/api/v1/projects/', require('./routes/v1/projects.routes.js'));
 app.use('/api/v1/auth/', require('./routes/v1/auth.routes.js'));
+app.use('/api/v1/tasks/', require('./routes/v1/tasks.routes.js'));
 
 app.use( (req,res,next) => {
 	return res.status(404).json({
