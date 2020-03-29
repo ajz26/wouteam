@@ -1,20 +1,42 @@
 const User = require('../models/User');
-const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const validator = require('validator')
 
 
 const moment = require('moment');
 
 exports.authUser = async (req, res) => {
 
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() })
-
     var { email, password } = req.body;
 
-    email = email.toLowerCase();
+    email = (email) ? email.toLowerCase(): undefined;
+    
+
+    if((!email || !validator.isEmail(email) )  && (!password || validator.isEmpty(password) ) ){
+        return res.status(401).json({
+            response: 'error',
+            msg: 'Por favor ingresa un  correo y su contraseña',
+        });
+    }
+
+    
+    if(!password || validator.isEmpty(password)){
+        return res.status(401).json({
+            response: 'error',
+            msg: 'Por favor ingresa una contraseña',
+        });
+    }
+
+    if(!email || !validator.isEmail(email)){
+        return res.status(401).json({
+            response: 'error',
+            msg: 'Por favor ingresa un correo válido',
+        });
+    }
+
+
+
 
     try {
 
@@ -23,7 +45,8 @@ exports.authUser = async (req, res) => {
         if (!user) {
             return res.status(400).json({
                 response: 'error',
-                msg: 'el usuario no existe'
+                code    : '001',
+                msg: `el correo "${email}" no está registrado`
             });
         }
 
@@ -33,7 +56,7 @@ exports.authUser = async (req, res) => {
         if(!match) {
             return res.status(400).json({
                 response: 'error',
-                msg: 'contraseña incorrecta'
+                msg: 'La contraseña ingresada es incorrecta'
             });
         }
 
