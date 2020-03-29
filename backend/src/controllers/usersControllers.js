@@ -1,18 +1,47 @@
 const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
+const validator = require('validator')
 
 exports.createUser = async (req, res) => {
 
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() })
-
     var { name, email, password } = req.body;
 
-    email = email.toLowerCase();
+    email = (email) ? email.toLowerCase(): undefined;
 
-    try {
+
+    try{
+
+        if((!name || validator.isEmpty(name)) && (!email || !validator.isEmail(email)) ){
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Por favor ingresa un nombre y correo válido',
+            });
+        }
+
+        
+        if(!name || validator.isEmpty(name)){
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Por favor ingresa un nombre válido',
+            });
+        }
+
+        if(!email || !validator.isEmail(email)){
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Por favor ingresa un correo válido',
+            });
+        }
+
+        if(!password || validator.isEmpty(password)){
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Por favor ingresa una contraseña mas fuerte',
+            });
+        }
+
+        try {
 
         let user = await User.findOne({ email });
 
@@ -33,7 +62,8 @@ exports.createUser = async (req, res) => {
             user: {
                 ID : user._id
             }
-         };
+        };
+
         var secret = process.env.SECRET;
         var token = jwt.sign(payload, secret,{
             expiresIn: 432000,
@@ -59,27 +89,29 @@ exports.createUser = async (req, res) => {
         });
     }
 
+
+    }catch(error){
+        console.log(error)
+    }
+
 }
 
 
 exports.updateUser = async (req, res) => {
 
-    const { name, email } = req.body;
+    const { name, lastName, profession } = req.body;
 
+    const data = {
+        name,
+        lastName,
+        profession,
+    }
 
-    SameEmail = await User.findOne({email});
-
-    // if (SameEmail) {
-    //     return res.status(401).json({
-    //         response: 'error',
-    //         msg: 'Uupps, ya existe un usuario con este email',
-    //     });
-    // }
-
-    User.findOneAndUpdate({ _id : req.user.ID },req.body,{
+    User.findOneAndUpdate({ _id : req.user.ID },data,{
             new:true,
             fields:{ "name":1,
                      "email":1,
+                     "lastName":1,
                      "register":1,
                      "_id":1,
                      "status":1,
@@ -100,19 +132,11 @@ exports.updateUser = async (req, res) => {
 
     }).catch( error => {
 
-        if(error.codeName === 'DuplicateKey') {
-            return res.status(400).json({
-                response: 'error',
-                msg: 'Ya existe un usuario con este correo electrónico',
-            });
-        }
-
         return res.status(400).json({
             response: 'error',
             msg: 'ha ocurrido un error',
         });
 
-        
     });
 
 }

@@ -12,18 +12,17 @@ const UserSchema = new Schema({
         type: String,
         trim: true
     },
+    avatar: {
+        type: String,
+    },
     email: {
         type: String,
         required: true,
         trim: true,
         unique: true
     },
-    phone: {
+    profession: {
         type: String,
-        trim: true,
-    },
-    notifications:{
-        type: Boolean,
     },
     password: {
         type: String,
@@ -38,6 +37,19 @@ const UserSchema = new Schema({
         type: String,
         default: 'pending'
     },
+    
+    friends:[
+        {
+            id: {
+                type: Schema.ObjectId,
+                required:true,
+            },
+            date: {
+                type: Date,
+                default: Date.now
+            }
+        }
+    ]
 });
 
 
