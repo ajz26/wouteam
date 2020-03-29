@@ -1,6 +1,3 @@
-"# wouteam" 
-
-
 usuario{
 nombre
 correo: unico*
@@ -76,3 +73,50 @@ fields:
 password
 
 
+*Crear nuevo proyecto*
+
+headers: x-auth-token: (Debes pasar el token por header)
+
+endpoint: (POST): /projects/
+
+fields:
+name
+
+
+*Listar proyectos del usuario*
+
+headers: x-auth-token: (Debes pasar el token por header)
+
+endpoint: (GET): /projects/
+
+
+*Detalle del proyecto*
+
+headers: x-auth-token: (Debes pasar el token por header)
+
+endpoint: (GET): /projects/:projectID
+
+
+*Eliminar proyecto proyecto*
+
+headers: x-auth-token: (Debes pasar el token por header)
+
+endpoint: (DELETE): /projects/
+
+fields:
+project : (id)
+
+
+Tareas
+
+Crear tarea
+
+headers: x-auth-token: (Debes pasar el token por header)
+
+IDProyect: el id del proyecto para el que se crea la tarea
+
+endpoint: (POST): /task/:IDProyect/
+
+fields:
+title
+description
