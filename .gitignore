@@ -1,6 +1,2 @@
-/backend/node_modules
-/backend/package-lock.json
-/frontend/node_modules
-/frontend/package-lock.json
-/frontend_next/node_modules
-/frontend_next/package-lock.json
+/node_modules
+/package-lock.json
