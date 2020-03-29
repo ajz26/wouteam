@@ -21,6 +21,14 @@ app.use('/api/v1/business/', require('./routes/v1/business.routes.js'));
 app.use('/api/v1/auth/', require('./routes/v1/auth.routes.js'));
 app.use('/api/v1/contacts/', require('./routes/v1/contacts.routes.js'));
 
+app.use( (req,res,next) => {
+	return res.status(404).json({
+		response: 'error',
+		msg: 'Endpoint no encontrado',
+	});
+}
+);
+
 // Static files
 app.use(express.static(path.join(__dirname,'public')));
 
