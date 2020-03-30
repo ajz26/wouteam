@@ -1,4 +1,5 @@
 const Project = require('../models/Projects');
+const User = require('../models/User');
 const moment = require('moment');
 
 exports.createProject = async (req, res) => {
@@ -54,7 +55,7 @@ exports.listProjects = async (req, res) => {
 
     try {
 
-        const projects = await Project.find({ 'users.user': req.user.ID} );
+        const projects = await Project.find({ 'users.user': req.user.ID} ).populate({path:'users.user',select:'name lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
 
         res.status(200).json({
             response: 'success',
