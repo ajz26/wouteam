@@ -7,6 +7,9 @@ const validator = require('validator')
 const moment = require('moment');
 
 exports.authUser = async (req, res) => {
+    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    console.log(ip)
 
     var { email, password } = req.body;
 
