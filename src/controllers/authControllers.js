@@ -49,7 +49,8 @@ exports.authUser = async (req, res) => {
             return res.status(400).json({
                 response: 'error',
                 code    : '001',
-                msg: `el correo "${email}" no está registrado`
+                msg: `el correo "${email}" no está registrado`,
+                ip
             });
         }
 
