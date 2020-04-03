@@ -2,6 +2,8 @@ const User = require('../models/User');
 const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const validator = require('validator')
+const path 			= require('path');
+
 
 exports.createUser = async (req, res) => {
 
@@ -98,21 +100,33 @@ exports.createUser = async (req, res) => {
 
 
 exports.updateUser = async (req, res) => {
+    
 
     const { name, lastName, profession } = req.body;
-
+    
+    const { avatar } = req.files;
+    
     const data = {
         name,
         lastName,
         profession,
     }
 
+    ;
+    
+    avatar.mv(path.join('src/public/upoad/filename.jpg'), function(err) {
+        if (err)
+          return res.status(500).send(err);
+          });
+
+    ;
     User.findOneAndUpdate({ _id : req.user.ID },data,{
             new:true,
             fields:{ "name":1,
                      "email":1,
                      "lastName":1,
                      "register":1,
+                     "profession":1,
                      "_id":1,
                      "status":1,
                     },}).then( user => {
@@ -242,6 +256,78 @@ exports.PasswordUpdate = async (req, res) => {
             msg: 'ha ocurrido un error',
         });
 
+    }
+
+}
+
+exports.findOnebyEmail = async (req, res) => {
+
+    var {email} = req.body;
+
+        email = (email) ? email.toLowerCase(): undefined;
+
+        if(!email || !validator.isEmail(email)){
+            return res.status(401).json({
+                response: 'error',
+                msg: 'Por favor ingresa un correo válido',
+            });
+        }
+
+        try {
+
+        let user = await User.findOne({ email },{'name':1,'avatar':1});
+
+        if (!user) {
+            return res.status(401).json({
+                response: 'error',
+                msg: 'No se encontró ningun usuario con ese correo, puedes invitarlo a crear una nueva cuenta',
+                email
+            });
+        }
+
+        return res.status(200).json({
+            response: 'success',
+            msg: 'Usuario encontrado exitosamente',
+            user
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error',
+            token: token
+        });
+    }
+
+}
+
+
+
+exports.friendList = async (req, res) => {
+
+    const currentUser = req.user.ID;
+
+    try {
+
+        let friends = await User.findOne({ _id: currentUser }, { friends: '1' }).populate({ path: 'friends', select: 'name lastName email' });
+
+        return res.status(200).json({
+            response: 'success',
+            msg: 'Lista de amigos cargada con exito',
+            friends: friends.friends
+        })
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error',
+        });
     }
 
 }

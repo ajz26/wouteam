@@ -40,15 +40,10 @@ const UserSchema = new Schema({
     
     friends:[
         {
-            id: {
                 type: Schema.ObjectId,
                 required:true,
-            },
-            date: {
-                type: Date,
-                default: Date.now
+                ref:'USER'
             }
-        }
     ]
 });
 

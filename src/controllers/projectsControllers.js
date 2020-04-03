@@ -75,6 +75,30 @@ exports.listProjects = async (req, res) => {
 
 }
 
+exports.projectUser = async (req, res) => {
+
+    try {
+
+        const projects = await Project.find({ 'users.user': req.user.ID},{ "users":1} ).populate({path:'users.user',select:'name lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
+
+        res.status(200).json({
+            response: 'success',
+            msg: 'Cuentas cargadas exitosamente',
+            projects
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error al cargar las cuentas',
+        });
+    }
+
+}
+
 // auth
 
 
@@ -120,7 +144,7 @@ exports.getProject = async (req, res) => {
 
     try {
 
-        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project} );
+        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project},{} );
 
         if(getProject){
             res.status(200).json({
@@ -131,7 +155,7 @@ exports.getProject = async (req, res) => {
         }else{
             res.status(400).json({
                 response: 'error',
-                msg: 'No se encontró ninguna cuenta',
+                msg: 'No se encontró ningun proyecto',
             });
         }
 

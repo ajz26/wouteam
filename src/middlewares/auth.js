@@ -37,8 +37,7 @@ exports.auth = async (req, res, next) => {
     
   } catch (error) {
     
-
-    console.log(error);
+    console.log('Token expirado')
 
     res.status(401).json({
         response: 'error',

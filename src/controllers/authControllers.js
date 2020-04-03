@@ -7,9 +7,10 @@ const validator = require('validator')
 const moment = require('moment');
 
 exports.authUser = async (req, res) => {
-    var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-    console.log(ip)
+    var ip = req.headers['x-forwarded-for'] || 
+    req.connection.remoteAddress || 
+    req.socket.remoteAddress ||
+    (req.connection.socket ? req.connection.socket.remoteAddress : null);
 
     var { email, password } = req.body;
 
@@ -101,7 +102,7 @@ exports.authLogUser = async (req,res) => {
 
     try {
 
-        const user = await User.findById(req.user.ID).select('-password');
+        const user = await User.findById(req.user.ID).select('-password').populate({path:'friends', select:'name lastName email avatar'});
 
         res.status(200).json(user);
         

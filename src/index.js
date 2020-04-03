@@ -1,18 +1,33 @@
 const express 		= require('express');
+const fileUpload 	= require('express-fileupload');
+var compression 	= require('compression');
 const morgan  		= require('morgan'); //uso en desarrollo para ver las peticiones al servidor
 const path    		= require('path');
 const cors 			= require('cors');
 const bodyParser 	= require('body-parser');
 					  require('./config/database'); // configuracion de base de datos
 const app 			= express();
+const helmet = require('helmet')
+
 // settings
 
 app.set('port',process.env.PORT || 3001);
 
 // middlewares
+
+app.use(fileUpload({
+	createParentPath: true,
+	safeFileNames: /\\/g,
+}));
+
+app.use(morgan('dev'));
+
+app.use(helmet())
+app.disable('x-powered-by')
+app.use(compression());
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // routes
 
@@ -20,6 +35,8 @@ app.use('/api/v1/user/', require('./routes/v1/users.routes.js'));
 app.use('/api/v1/projects/', require('./routes/v1/projects.routes.js'));
 app.use('/api/v1/auth/', require('./routes/v1/auth.routes.js'));
 app.use('/api/v1/tasks/', require('./routes/v1/tasks.routes.js'));
+
+app.use('/api/v1/friend-request/', require('./routes/v1/friendRequest.routes.js'));
 
 app.use( (req,res,next) => {
 	return res.status(404).json({

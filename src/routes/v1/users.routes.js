@@ -1,7 +1,6 @@
 const express   = require('express');
 const router    =  express.Router();
-const {createUser,updateUser,updateUserPasswordGenerateToken,PasswordUpdate} = require('../../controllers/usersControllers');
-const {check} = require('express-validator');  
+const {createUser,updateUser,updateUserPasswordGenerateToken,PasswordUpdate,findOnebyEmail} = require('../../controllers/usersControllers');
 const {auth} = require('../../middlewares/auth');
 
 // Create an user
@@ -15,6 +14,8 @@ router.put('/',auth,updateUser);
 router.post('/reset-password/',updateUserPasswordGenerateToken);
 
 router.post('/reset-password/:token',PasswordUpdate);
+
+router.get('/find/', auth,findOnebyEmail);
 
 
 
