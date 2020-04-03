@@ -79,12 +79,15 @@ exports.New = async (req, res) => {
 
         const friendreq = await new FriendRequest(Request);
 
+
+        
+
         resp = await friendreq.save();
 
         return res.status(200).json({
             response: 'success',
             msg: 'solicitud de amistad creada con exito',
-            resp
+            // resp
         })
 
 
@@ -114,7 +117,7 @@ exports.acceptInvitation = async (req, res) => {
 
         let request = await FriendRequest.findOne({ $and: [{ _id: invitation }, { receptor: currentUser }, { '': null }] });
 
-        if (request.is_accepted !== null ) {
+        if (request.is_accepted !== undefined ) {
 
             return res.status(400).json({
                 response: 'error',
@@ -122,7 +125,13 @@ exports.acceptInvitation = async (req, res) => {
             })
 
         }
-        const friendReqUp = await FriendRequest.findOneAndUpdate({ _id: invitation }, { 'is_accepted.response': response,'is_accepted.date': currentDate }, { new: true })
+        const friendReqUp = await FriendRequest.findOneAndUpdate({ _id: invitation }, { 'is_accepted.response': response,'is_accepted.date': currentDate }, { new: true }).populate({
+            path: 'receptor',
+            select: 'name lastName email'
+        }).populate({
+            path: 'sender',
+            select: 'name lastName email'
+        })
 
         await User.findOneAndUpdate({ _id: request.receptor }, { $push: { friends: request.sender } })
 
@@ -160,7 +169,7 @@ exports.list = async (req, res) => {
 
 
         let request = (!all) ?
-            await FriendRequest.findOne({
+            await FriendRequest.find({
                 $and: [{
                     receptor: currentUser
                 }, {
@@ -174,7 +183,7 @@ exports.list = async (req, res) => {
                 path: 'sender',
                 select: 'name lastName email'
             })
-            : await FriendRequest.findOne({
+            : await FriendRequest.find({
                 receptor: currentUser
             }).populate({
                 path: 'receptor',
