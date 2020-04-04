@@ -49,11 +49,12 @@ app.use('/api/v1/auth/',apiLimiter, require('./routes/v1/auth.routes.js'));
 app.use('/api/v1/tasks/', require('./routes/v1/tasks.routes.js'));
 
 app.use('/api/v1/friend-request/', require('./routes/v1/friendRequest.routes.js'));
+app.use('/upload/',auth);
 
 
 
 // Static files
-app.use(auth,express.static(path.join(__dirname,'public')));
+app.use(express.static(path.join(__dirname,'public')));
 
 
 app.use( (req,res,next) => {
