@@ -1,15 +1,15 @@
 const express   = require('express');
 const router    =  express.Router();
-const {createUser,updateUser,updateUserPasswordGenerateToken,PasswordUpdate,findOnebyEmail} = require('../../controllers/usersControllers');
+const {create,update,uploadAvatar,updateUserPasswordGenerateToken,PasswordUpdate,findOnebyEmail} = require('../../controllers/usersControllers');
 const {auth} = require('../../middlewares/auth');
 
 // Create an user
 
 
 // *endpoint* /api/v1/user/ 
-router.post('/new/',createUser);
+router.post('/new/',create);
 
-router.put('/',auth,updateUser);
+router.put('/',auth,uploadAvatar,update);
 
 router.post('/reset-password/',updateUserPasswordGenerateToken);
 

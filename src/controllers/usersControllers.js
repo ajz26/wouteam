@@ -1,42 +1,52 @@
 const User = require('../models/User');
-const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const validator = require('validator')
-const path 			= require('path');
+const path = require('path');
+const multer	= require('multer');
+
+const storage = multer.diskStorage({
+    destination: path.join('src/public/upload/'),
+    filename: function (req, file, cb) {
+        console.log(req.body)
+      cb(null,Date.now()+'-'+file.originalname)
+    }
+  })
+
+exports.uploadAvatar  = multer({storage}).single('avatar');
 
 
-exports.createUser = async (req, res) => {
+exports.create = async (req, res) => {
 
     var { name, email, password } = req.body;
 
-    email = (email) ? email.toLowerCase(): undefined;
+    email = (email) ? email.toLowerCase() : undefined;
 
 
-    try{
+    try {
 
-        if((!name || validator.isEmpty(name)) && (!email || !validator.isEmail(email)) ){
+        if ((!name || validator.isEmpty(name)) && (!email || !validator.isEmail(email))) {
             return res.status(401).json({
                 response: 'error',
                 msg: 'Por favor ingresa un nombre y correo válido',
             });
         }
 
-        
-        if(!name || validator.isEmpty(name)){
+
+        if (!name || validator.isEmpty(name)) {
             return res.status(401).json({
                 response: 'error',
                 msg: 'Por favor ingresa un nombre válido',
             });
         }
 
-        if(!email || !validator.isEmail(email)){
+        if (!email || !validator.isEmail(email)) {
             return res.status(401).json({
                 response: 'error',
                 msg: 'Por favor ingresa un correo válido',
             });
         }
 
-        if(!password || validator.isEmpty(password)){
+        if (!password || validator.isEmpty(password)) {
             return res.status(401).json({
                 response: 'error',
                 msg: 'Por favor ingresa una contraseña mas fuerte',
@@ -45,91 +55,94 @@ exports.createUser = async (req, res) => {
 
         try {
 
-        let user = await User.findOne({ email });
+            let user = await User.findOne({ email });
 
-        if (user) {
-            return res.status(401).json({
-                response: 'already',
-                msg: 'Uupps, Ya existe un usuario con este correo',
-                email: user.email
+            if (user) {
+                return res.status(401).json({
+                    response: 'already',
+                    msg: 'Uupps, Ya existe un usuario con este correo',
+                    email: user.email
+                });
+            }
+
+            user = new User({ name, email, password });
+            user.password = await user.encryptPassword(user.password);
+
+            user = await user.save();
+
+            const payload = {
+                user: {
+                    ID: user._id
+                }
+            };
+
+            var secret = process.env.SECRET;
+            var token = jwt.sign(payload, secret, {
+                expiresIn: 432000,
+            }, (error, token) => {
+                if (error) throw error;
+
+                res.status(200).json({
+                    response: 'success',
+                    msg: 'Bienvenido, Usuario registrado exitosamente',
+                    token
+                });
+
+            });
+
+        } catch (error) {
+
+            res.status(400).json({
+                response: 'error',
+                msg: 'ha ocurrido un error',
+                token: token
             });
         }
 
-        user = new User({ name, email, password });
-        user.password = await user.encryptPassword(user.password);        
-        
-        user =  await user.save();
-
-        const payload = {
-            user: {
-                ID : user._id
-            }
-        };
-
-        var secret = process.env.SECRET;
-        var token = jwt.sign(payload, secret,{
-            expiresIn: 432000,
-        },(error,token) => {
-            if (error) throw error;
-
-            res.status(200).json({
-                response: 'success',
-                msg: 'Bienvenido, Usuario registrado exitosamente',
-                token
-            });
-
-        });
 
     } catch (error) {
-
-        console.log(error);
-
-        res.status(400).json({
-            response: 'error',
-            msg: 'ha ocurrido un error',
-            token: token
-        });
-    }
-
-
-    }catch(error){
         console.log(error)
     }
 
 }
 
 
-exports.updateUser = async (req, res) => {
-    
+
+
+exports.update = async (req, res) => {
 
     const { name, lastName, profession } = req.body;
-    
-    const { avatar } = req.files;
-    
+
+    const avatar = (req.file) ? req.file.filename : undefined;
+
+    console.log(avatar);
+
     const data = {
         name,
         lastName,
         profession,
+        avatar
     }
 
-    ;
-    
-    avatar.mv(path.join('src/public/upoad/filename.jpg'), function(err) {
-        if (err)
-          return res.status(500).send(err);
-          });
+    if(!name) delete data.name;
+    if(!lastName) delete data.lastName;
+    if(!profession) delete data.profession;
+    if(!avatar) delete data.avatar;
 
-    ;
-    User.findOneAndUpdate({ _id : req.user.ID },data,{
-            new:true,
-            fields:{ "name":1,
-                     "email":1,
-                     "lastName":1,
-                     "register":1,
-                     "profession":1,
-                     "_id":1,
-                     "status":1,
-                    },}).then( user => {
+
+    User.findOneAndUpdate({ _id: req.user.ID }, data, {
+        new: true,
+        fields: {
+            "name": 1,
+            "email": 1,
+            "lastName": 1,
+            "register": 1,
+            "profession": 1,
+            "_id": 1,
+            "status": 1,
+            "avatar": 1,
+        },
+    }).then(user => {
         if (!user) {
             return res.status(401).json({
                 response: 'error',
@@ -142,9 +155,11 @@ exports.updateUser = async (req, res) => {
             msg: 'Usuario actualizado exitosamente',
             user
         });
-        
 
-    }).catch( error => {
+
+    }).catch(error => {
+
+        console.log(error)
 
         return res.status(400).json({
             response: 'error',
@@ -160,7 +175,7 @@ exports.updateUserPasswordGenerateToken = async (req, res) => {
 
     const { email } = req.body;
 
-    if(!email || !validator.isEmail(email)){
+    if (!email || !validator.isEmail(email)) {
         return res.status(401).json({
             response: 'error',
             msg: 'Por favor ingresa un correo válido',
@@ -168,7 +183,7 @@ exports.updateUserPasswordGenerateToken = async (req, res) => {
     }
 
 
-    User.findOne({ email }).then( user => {
+    User.findOne({ email }).then(user => {
         if (!user) {
             return res.status(401).json({
                 response: 'error',
@@ -179,12 +194,12 @@ exports.updateUserPasswordGenerateToken = async (req, res) => {
         var secret = process.env.SECRET;
 
         const payload = {
-            user:user._id
+            user: user._id
         };
 
-        jwt.sign(payload, secret,{
+        jwt.sign(payload, secret, {
             expiresIn: 3600,
-        },(error,token) => {
+        }, (error, token) => {
             if (error) throw error;
 
             res.status(200).json({
@@ -194,9 +209,9 @@ exports.updateUserPasswordGenerateToken = async (req, res) => {
             });
 
         });
-        
 
-    }).catch( error => {
+
+    }).catch(error => {
 
         return res.status(400).json({
             response: 'error',
@@ -210,13 +225,13 @@ exports.updateUserPasswordGenerateToken = async (req, res) => {
 
 exports.PasswordUpdate = async (req, res) => {
 
-    const {token} = req.params;
+    const { token } = req.params;
 
-    const {password} = req.body;
- 
-    const verifyToken = ( validator.isJWT(token)) ? jwt.verify(token,process.env.SECRET) : false;
+    const { password } = req.body;
 
-    if (!token || !verifyToken){
+    const verifyToken = (validator.isJWT(token)) ? jwt.verify(token, process.env.SECRET) : false;
+
+    if (!token || !verifyToken) {
 
         return res.status(301).json({
             response: 'error',
@@ -224,7 +239,7 @@ exports.PasswordUpdate = async (req, res) => {
         });
     }
 
-    if (!password || validator.isEmpty(password)){
+    if (!password || validator.isEmpty(password)) {
 
         return res.status(400).json({
             response: 'error',
@@ -232,14 +247,14 @@ exports.PasswordUpdate = async (req, res) => {
         });
     }
 
-    try{
+    try {
 
         const ID = verifyToken.user;
 
-        const user = await User.findOne({_id:ID});
+        const user = await User.findOne({ _id: ID });
 
-        user.password = await user.encryptPassword(password);        
-        
+        user.password = await user.encryptPassword(password);
+
         await user.save();
 
         res.status(200).json({
@@ -247,8 +262,8 @@ exports.PasswordUpdate = async (req, res) => {
             msg: 'contraseña actualizada correctamente',
         });
     }
-    
-    catch ( error) {
+
+    catch (error) {
         console.log('ha ocurrido un error al actualizar la contraseña')
 
         return res.status(400).json({
@@ -262,20 +277,20 @@ exports.PasswordUpdate = async (req, res) => {
 
 exports.findOnebyEmail = async (req, res) => {
 
-    var {email} = req.body;
+    var { email } = req.body;
 
-        email = (email) ? email.toLowerCase(): undefined;
+    email = (email) ? email.toLowerCase() : undefined;
 
-        if(!email || !validator.isEmail(email)){
-            return res.status(401).json({
-                response: 'error',
-                msg: 'Por favor ingresa un correo válido',
-            });
-        }
+    if (!email || !validator.isEmail(email)) {
+        return res.status(401).json({
+            response: 'error',
+            msg: 'Por favor ingresa un correo válido',
+        });
+    }
 
-        try {
+    try {
 
-        let user = await User.findOne({ email },{'name':1,'avatar':1});
+        let user = await User.findOne({ email }, { 'name': 1, 'avatar': 1 });
 
         if (!user) {
             return res.status(401).json({
