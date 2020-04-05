@@ -1,15 +1,15 @@
 const express   = require('express');
 const router    =  express.Router();
-const {createTask,listTasks,deleteTask,getTask} = require('../../controllers/taskControllers');
+const {create,list,deleteTask,getTask} = require('../../controllers/taskControllers');
 const {auth,projectAuth} = require('../../middlewares/auth');
 
 
 // *endpoint* /api/v1/tasks/
 
 // Create an business
-router.post('/:project/',auth,projectAuth,createTask);
+router.post('/:project/',auth,projectAuth,create);
 
-router.get('/:project/',auth,listTasks);
+router.get('/:project/',auth,projectAuth,list);
 
 router.get('/:project/:task',auth,getTask);
 

@@ -4,7 +4,7 @@ const validator = require('validator')
 
 const moment = require('moment');
 
-exports.createTask = async (req, res) => {
+exports.create = async (req, res) => {
 
     const { project } = req.params;
 
@@ -54,18 +54,20 @@ exports.createTask = async (req, res) => {
 }
 
 
-exports.listTasks = async (req, res) => {
+exports.list = async (req, res) => {
 
-    const project = req.params;
+    const currentUser = req.user.ID;
+
+    const project = req.params.project;
 
     try {
+        
+        const tasks = await Tasks.find({'project':project} ).select('title description status').populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
 
-        const tasks = await Tasks.find({ 'users.user': req.user.ID,'project':project} );
-
-        res.status(200).json({
+        return res.status(200).json({
             response: 'success',
-            msg: 'Cuentas cargadas exitosamente',
-            projects
+            msg: 'tareas cargadas exitosamente',
+            tasks
         });
 
     } catch (error) {
@@ -74,7 +76,7 @@ exports.listTasks = async (req, res) => {
 
         res.status(400).json({
             response: 'error',
-            msg: 'ha ocurrido un error al cargar las cuentas',
+            msg: 'ha ocurrido un error al cargar las tareas',
         });
     }
 

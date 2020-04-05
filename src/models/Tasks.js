@@ -1,5 +1,42 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const USER = require('./User');
+
+
+const userChildSchema = new Schema({
+    user: {
+    type: Schema.ObjectId,
+    required:true,
+    ref: "USER"
+},
+addedBy: {
+    type: Schema.ObjectId,
+    required:true,
+},
+date: {
+    type: Date,
+    default: Date.now
+}
+}, { _id: false });
+
+
+const statusChildSchema = new Schema({
+    statement: {
+        default: 'pending',
+        type: String,
+    },
+    changedBy: {
+        type: Schema.ObjectId,
+        required:true,
+        ref: "USER"
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    }
+
+}, { _id: false });
+
 
 const TasksSchema = new Schema({
 
@@ -20,47 +57,15 @@ const TasksSchema = new Schema({
         user: {
             type: Schema.ObjectId,
             required:true,
+            ref:'USER'
         },
         date: {
             type: Date,
             default: Date.now
         }
     },
-    status:[
-        {
-            statement: {
-                default: 'pending',
-                type: String,
-            },
-            changedBy: {
-                type: Schema.ObjectId,
-                required:true,
-            },
-            date: {
-                type: Date,
-                default: Date.now
-            }
-
-        }
-    ],
-    users:[
-        
-        {
-            user: {
-                type: Schema.ObjectId,
-                required:true,
-            },
-            addedBy: {
-                type: Schema.ObjectId,
-                required:true,
-            },
-            date: {
-                type: Date,
-                default: Date.now
-            }
-
-        }
-    ]
+    status:[statusChildSchema],
+    users:[userChildSchema]
     
 });
 
