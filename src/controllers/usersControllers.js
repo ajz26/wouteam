@@ -321,18 +321,77 @@ exports.findOnebyEmail = async (req, res) => {
 
 
 
-exports.friendList = async (req, res) => {
+exports.friends = async (req, res) => {
 
     const currentUser = req.user.ID;
 
+    const friend = (req.query) ? req.query.friend : undefined; 
+
+    console.log(friend);
+
+
     try {
 
-        let friends = await User.findOne({ _id: currentUser }, { friends: '1' }).populate({ path: 'friends', select: 'name lastName email' });
+        let friends = (!friend) ?
+        
+        await User.findOne({ _id: currentUser }, { friends: '1' }).populate({ path: 'friends', select: 'name lastName email' }):
+             
+        
+        await User.findOne({$and:[{ _id: friend }, { friends: currentUser }]}, { name: '1','lastname': '1', email:'1'});
+
+
+        console.log(Array.isArray(friends.friends))
+
 
         return res.status(200).json({
             response: 'success',
             msg: 'Lista de amigos cargada con exito',
-            friends: friends.friends
+            friends : (friends.friends) ? friends.friends : friends
+        })
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error',
+        });
+    }
+
+}
+
+
+
+exports.friend = async (req, res) => {
+
+    const currentUser = req.user.ID;
+
+    const friend = req.params.friend; 
+
+    if(!validator.isMongoId(friend)){
+        return res.status(400).json({
+            response: 'error',
+            msg: 'No se presentó un ID de usuario válido',
+        });
+    }
+
+
+    try {
+
+        let f = await User.findOne({$and:[{ _id: friend }, { friends: currentUser }]}, { name: '1','lastname': '1', avatar:'1', email:'1'});
+
+        if(!f){
+            return res.status(400).json({
+                response: 'error',
+                msg: 'No se encontró ningun amigo con el ID suministrado',
+            });
+        }
+
+        return res.status(200).json({
+            response: 'success',
+            msg: 'Amigo cargado con exito',
+            friend : f
         })
 
     } catch (error) {
