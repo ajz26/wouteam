@@ -144,7 +144,7 @@ exports.getProject = async (req, res) => {
 
     try {
 
-        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project},{} );
+        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project},{} ).populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});;
 
         if(getProject){
             res.status(200).json({
