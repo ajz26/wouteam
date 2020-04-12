@@ -119,7 +119,7 @@ exports.getTask = async (req, res) => {
 
     try {
 
-        const getTask = await Tasks.findOne({'_id':task,'status':'publish'}).populate({path:'users.user',select:'name lastName avatar'}).populate({path:'createdBy',select:'name lastName avatar'})
+        const getTask = await Tasks.findOne({'_id':task}).populate({path:'users.user',select:'name lastName avatar'}).populate({path:'createdBy',select:'name lastName avatar'})
 
         if(getTask){
             res.status(200).json({
@@ -130,7 +130,7 @@ exports.getTask = async (req, res) => {
         }else{
             res.status(404).json({
                 response: 'error',
-                msg: 'No se encontró ninguna cuenta',
+                msg: 'No se encontró ninguna tarea',
             });
         }
 
