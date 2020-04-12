@@ -15,9 +15,7 @@ exports.create = async (req, res) => {
         task = await new Tasks({
             title,
             description,
-            createdBy: {
-                user: req.user.ID
-            },
+            createdBy: req.user.ID,
             project,
             users:[
                 {
@@ -25,20 +23,14 @@ exports.create = async (req, res) => {
                     addedBy: req.user.ID,
                 }
             ],
-            status:[
-                {
-                    statement: 'pending',
-                    changedBy: req.user.ID,
-                }
-            ]
         });
 
-        await task.save();
+        const t = await task.save();
 
         res.status(200).json({
             response: 'success',
             msg: `Se ha creado la tarea "${task.title}" exitosamente`,
-            task
+            task: t._id
         });
 
     } catch (error) {
@@ -62,7 +54,7 @@ exports.list = async (req, res) => {
 
     try {
         
-        const tasks = await Tasks.find({'project':project} ).select('title description status').populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
+        const tasks = await Tasks.find({'project':project,'status':'publish'} ).select('title description excerpt completed ').populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
 
         return res.status(200).json({
             response: 'success',
@@ -87,21 +79,21 @@ exports.list = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
 
-    const { project } = req.body;
+    const { task } = req.params;
 
     try {
 
-        const projectDeleted = await Project.findOneAndDelete({ 'users.user': req.user.ID,'_id':project} );
+       const projectDeleted =  await Tasks.findOneAndDelete({'_id':task} );
 
         if(projectDeleted){
             res.status(200).json({
                 response: 'success',
-                msg: 'Cuenta eliminada exitosamente',
+                msg: 'Tarea eliminada exitosamente',
             });
         }else{
-            res.status(400).json({
+            res.status(404).json({
                 response: 'error',
-                msg: 'No se encontró ninguna cuenta',
+                msg: 'No se encontró ninguna tarea',
             });
         }
 
@@ -113,7 +105,7 @@ exports.deleteTask = async (req, res) => {
 
         res.status(400).json({
             response: 'error',
-            msg: 'ha ocurrido un error al cargar las cuentas',
+            msg: 'ha ocurrido un error al cargar la tarea',
         });
     }
 
@@ -123,22 +115,80 @@ exports.deleteTask = async (req, res) => {
 
 exports.getTask = async (req, res) => {
 
-    const { project } = req.params;
+    const { task } = req.params;
 
     try {
 
-        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project} );
+        const getTask = await Tasks.findOne({'_id':task,'status':'publish'}).populate({path:'users.user',select:'name lastName avatar'}).populate({path:'createdBy',select:'name lastName avatar'})
 
-        if(getProject){
+        if(getTask){
             res.status(200).json({
                 response: 'success',
                 msg: 'Cuenta cargada exitosamente',
-                project:getProject
+                task:getTask
+            });
+        }else{
+            res.status(404).json({
+                response: 'error',
+                msg: 'No se encontró ninguna cuenta',
+            });
+        }
+
+       
+
+    } catch (error) {
+
+        res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error al cargar las cuentas',
+        });
+    }
+
+}
+
+
+
+exports.update = async (req, res) => {
+
+    const { task } = req.params;
+
+    const { title, description, status,completed,excerpt } = req.body;
+
+
+    const data = {
+        title,
+        description,
+        excerpt,
+        status,
+        completed,
+        modifiedDate: moment.now(), 
+    }
+
+    if(!title) delete data.title;
+    if(!description) delete data.description;
+    if(!excerpt) delete data.excerpt;
+    if(!status) delete data.status;
+    if(!completed) delete data.completed;
+
+    
+
+
+    try {
+
+        const getTask = await Tasks.findOneAndUpdate({ '_id':task},data,{
+            new:true
+        }).populate({path:'users.user',select:'name lastName avatar'}).populate({path:'createdBy',select:'name lastName avatar'});
+
+        if(getTask){
+            res.status(200).json({
+                response: 'success',
+                msg: 'Tarea actualizada exitosamente',
+                project:getTask
             });
         }else{
             res.status(400).json({
                 response: 'error',
-                msg: 'No se encontró ninguna cuenta',
+                msg: 'No se pudo actualizar la tarea',
             });
         }
 
@@ -150,9 +200,8 @@ exports.getTask = async (req, res) => {
 
         res.status(400).json({
             response: 'error',
-            msg: 'ha ocurrido un error al cargar las cuentas',
+            msg: 'ha ocurrido un error al cargar las tareas',
         });
     }
 
 }
-

@@ -1,7 +1,12 @@
 const User = require('../models/User');
+const Tasks = require('../models/Tasks');
+const Project = require('../models/Projects');
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const validator = require('validator')
+
+
 
 
 const moment = require('moment');
@@ -100,9 +105,16 @@ exports.authUser = async (req, res) => {
 
 exports.authLogUser = async (req,res) => {
 
+    const currentUser = req.user.ID;
+
     try {
 
-        const user = await User.findById(req.user.ID).select('-password').populate({path:'friends', select:'name lastName email avatar'});
+        const user = await User.findById(currentUser).select('-password').populate({path:'friends', select:'name lastName email avatar'});
+        
+        const tasksTotal = await Tasks.estimatedDocumentCount({ 'users.user': currentUser});
+        // const projectsTotal = await Project.count({ 'users.user': req.user.ID});
+
+        console.log(tasksTotal)
 
         res.status(200).json(user);
         
