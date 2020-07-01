@@ -6,6 +6,13 @@ exports.createProject = async (req, res) => {
 
     const { name } = req.body;
 
+    if(!name){
+        return res.status(400).json({
+            response: 'error',
+            msg: 'Por favor ingresa un nombre válido para el proyecto',
+        }); 
+    }
+
     try {
 
         project = await new Project({
@@ -20,6 +27,7 @@ exports.createProject = async (req, res) => {
                     addedBy: req.user.ID,
                 }
             ],
+            owner: req.user.ID,
             progress:{
                 status:[
                     {
@@ -55,12 +63,15 @@ exports.listProjects = async (req, res) => {
 
     try {
 
-        const projects = await Project.find({ 'users.user': req.user.ID} ).populate({path:'users.user',select:'name lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});
+        const projects = await Project.find({ 'users.user': req.user.ID} ).populate({path:'users.user',select:'name lastName email'}).populate({path:'createdBy.user',select:'name lastName email'}).populate({path:'owner',select:'name lastName email'});
+
+        count = projects.length;
 
         res.status(200).json({
             response: 'success',
-            msg: 'Cuentas cargadas exitosamente',
-            projects
+            msg: (count === 1 ) ? 'Proyecto cargado con exito' :'Proyectos cargados exitosamente',
+            projects,
+            count
         });
 
     } catch (error) {
@@ -83,7 +94,7 @@ exports.projectUser = async (req, res) => {
 
         res.status(200).json({
             response: 'success',
-            msg: 'Cuentas cargadas exitosamente',
+            msg: 'Proyectos cargadps exitosamente',
             projects
         });
 
@@ -102,13 +113,108 @@ exports.projectUser = async (req, res) => {
 // auth
 
 
-exports.deleteProject = async (req, res) => {
 
-    const { project } = req.body;
+
+
+exports.getProject = async (req, res) => {
+
+    const { project } = req.params;
 
     try {
 
-        const projectDeleted = await Project.findOneAndDelete({ 'users.user': req.user.ID,'_id':project} );
+        const p = await Project.findOne({ 'users.user': req.user.ID,'_id':project},{} ).populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'}).populate({path:'owner',select:'name lastName email'});
+
+        if(p){
+            res.status(200).json({
+                response: 'success',
+                msg: 'Proyecto cargado exitosamente',
+                project: p
+            });
+        }else{
+            res.status(400).json({
+                response: 'error',
+                msg: 'No se encontró ningun proyecto',
+            });
+        }
+
+       
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error al cargar las cuentas',
+        });
+    }
+
+}
+
+
+function clean(obj) {
+    for (var propName in obj) { 
+      if (obj[propName] === null || obj[propName] === undefined) {
+        delete obj[propName];
+      }
+    }
+}
+
+exports.update = async (req, res) => {
+
+    const { project } = req.params;
+    const {name, startDate, endDate,priority,description } = req.body;
+
+
+    let update = {
+        name,
+        "progress.start": (startDate) ? startDate : null,
+        "progress.end":(endDate) ? endDate : null ,
+        "priority":(priority) ? priority : null ,
+        "description":(description) ? priority : null ,
+    }
+
+    clean(update);
+    
+    try {
+
+        const getProject = await Project.findOneAndUpdate({ 'users.user': req.user.ID,'_id':project},{ $set: update },{upsert: true, new: true}).populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'}).populate({path:'owner',select:'name lastName email'});
+
+        if(getProject){
+            res.status(200).json({
+                response: 'success',
+                msg: 'Proyecto actualizado exitosamente',
+                project:getProject
+            });
+        }else{
+            res.status(400).json({
+                response: 'error',
+                msg: 'No se encontró ningun proyecto',
+            });
+        }
+
+       
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.status(400).json({
+            response: 'error',
+            msg: 'ha ocurrido un error al cargar las cuentas',
+        });
+    }
+
+}
+
+
+exports.Delete = async (req, res) => {
+
+    const { project } = req.params;
+
+    try {
+
+        const projectDeleted = await Project.findOneAndDelete({ 'users.user': req.user.ID, '_id':project} );
 
         if(projectDeleted){
             res.status(200).json({
@@ -135,41 +241,3 @@ exports.deleteProject = async (req, res) => {
     }
 
 }
-
-
-
-exports.getProject = async (req, res) => {
-
-    const { project } = req.params;
-
-    try {
-
-        const getProject = await Project.findOne({ 'users.user': req.user.ID,'_id':project},{} ).populate({path:'users.user',select:'name avatar lastName email'}).populate({path:'createdBy.user',select:'name lastName email'});;
-
-        if(getProject){
-            res.status(200).json({
-                response: 'success',
-                msg: 'Cuenta cargada exitosamente',
-                project:getProject
-            });
-        }else{
-            res.status(400).json({
-                response: 'error',
-                msg: 'No se encontró ningun proyecto',
-            });
-        }
-
-       
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(400).json({
-            response: 'error',
-            msg: 'ha ocurrido un error al cargar las cuentas',
-        });
-    }
-
-}
-

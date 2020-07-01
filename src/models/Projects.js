@@ -31,6 +31,11 @@ const ProjectSchema = new Schema({
 
     description: {
         type: String,
+        default: ''
+    },
+    priority: {
+        type: String,
+        default: 'low'
     },
     createdBy: {
         user: {
@@ -42,6 +47,11 @@ const ProjectSchema = new Schema({
             type: Date,
             default: Date.now
         }
+    },
+    owner: {
+        type: Schema.ObjectId,
+        required:true,
+        ref:'USER'
     },
     progress:{
         start:{
