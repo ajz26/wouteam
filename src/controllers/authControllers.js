@@ -52,7 +52,7 @@ exports.authUser = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(400).json({
+            return res.status(401).json({
                 response: 'error',
                 code    : '001',
                 msg: `el correo "${email}" no está registrado`,
@@ -64,7 +64,7 @@ exports.authUser = async (req, res) => {
 
 
         if(!match) {
-            return res.status(400).json({
+            return res.status(401).json({
                 response: 'error',
                 msg: 'La contraseña ingresada es incorrecta'
             });
